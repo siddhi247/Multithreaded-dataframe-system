@@ -1,25 +1,72 @@
-Problem: Traditional Java DataFrames process data sequentially, causing inefficiencies with large datasets. Our project develops a custom data structure—a Multi-Threaded DataFrame— that uses parallel computing to accelerate sorting, filtering, and aggregation, improving scalability and performance.
+# MultiThreaded DataFrame System
 
-Description:
+A Java-based DataFrame implementation that performs CSV data processing using sequential and parallel execution. The project explores parallel computing using Java Parallel Streams and evaluates its impact on performance.
 
-Parallel Sorting — Fast column-based sorting using multithreading.
-Parallel Filtering — High-performance filtering with lambda-based conditions.
-Parallel GroupBy & Aggregation — Supports sum, avg, min, and max over groups.
-CSV Load & Export — Reads and writes CSV files with automatic null handling.
-Benchmarking — Tracks performance of each major operation (in ms).
-This custom DataFrame structure improves scalability and speed, making it ideal for lightweight data analysis in Java environments.
+## Features
 
-Data Structures Used:
+- CSV loading and exporting.
+- Column-wise data storage.
+- Sorting by numerical and textual columns.
+- Filtering records based on conditions.
+- Group By with SUM, AVG, MIN and MAX aggregation.
+- Sequential and parallel execution modes.
+- Execution time benchmarking.
 
-ArrayList – For storing column names and column-wise data (fast indexed access).
-LinkedHashMap – For maintaining insertion order in columns and benchmarks.
-HashMap – For internal row representation and group-by aggregations.
-List – For row-level operations like filtering and sorting.
-Map<String, String> – Represents individual rows for easy access by column name.
-Core Logic and Implementation:
+## Tech Stack
 
-Parallel Sorting : Data is divided into smaller chunks and each chunk is sorted in a separate thread. The results are merged after all threads complete.
-Parallel Filtering : Rows are split across threads and filtered using a custom condition. The filtered data is collected and returned as a new DataFrame.
-GroupBy and Aggregation : Rows are grouped based on a column value. Aggregation functions like sum, avg, min, and max are applied to the grouped data.Multiple threads handle different groups in parallel
-CSV Handling : Reads data line-by-line and stores it in memory. Automatically handles missing values.Supports exporting the final data back to a CSV file.
-Benchmarking : Time is recorded before and after each operation. Execution time is printed in milliseconds for performance comparison.
+- Java
+- Java Collections Framework
+- Java Streams and Parallel Streams
+- Java I/O
+- Multithreading and Parallel Computing
+
+## How to Run
+
+**1. Compile the project**
+
+```bash
+javac Main.java DataFrameInterface.java MultiThreadedDataFrame.java
+```
+
+**2. Run in Parallel Mode (Default)**
+
+```bash
+java Main
+```
+
+**3. Run in Sequential Mode**
+
+```bash
+java -Dparallel=false Main
+```
+
+Enter the path to your CSV dataset when prompted.
+
+## Implementation Details
+
+- Uses `LinkedHashMap` and `ArrayList` for column-wise data storage.
+- Uses Java Streams for sequential processing and Parallel Streams for parallel execution.
+- Implements sorting, filtering and grouping with aggregation.
+- Uses `System.nanoTime()` to measure operation execution times.
+- Supports switching between execution modes through a JVM system property without changing source code.
+
+## Performance Evaluation
+
+Benchmarked using a dataset containing **2 million records**, with four measured runs per operation. CSV loading time was excluded.
+
+| Operation | Sequential (ms) | Parallel (ms) | Improvement |
+|---|---:|---:|---:|
+| Sorting | 2023.336 | 1852.056 | 8.47% |
+| Filtering | 1487.304 | 1147.408 | 22.85% |
+| Group By | 441.657 | 374.079 | 15.30% |
+| **Overall** | **3952.297** | **3373.543** | **14.64%** |
+
+### Observations
+
+- Filtering showed the highest performance improvement.
+- Parallel execution improved all three operations in this experiment.
+- Performance gains depend on workload size and parallelization overhead.
+
+## Conclusion
+
+The project demonstrates how parallel computing can improve data processing performance. Comparing sequential and parallel execution highlights the benefits and limitations of parallelization across different DataFrame operations.
