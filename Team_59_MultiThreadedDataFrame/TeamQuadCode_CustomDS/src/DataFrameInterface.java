@@ -8,7 +8,7 @@ public class DataFrameInterface {
     public void start() {
         try {
             System.out.print("Enter path to CSV file: ");
-            String path = scanner.nextLine();
+            String path = scanner.nextLine().trim();
             df = new MultiThreadedDataFrame(path);
             System.out.println("\nCSV Loaded. Rows: " + df.getRowCount());
             df.printBenchmarks();
@@ -57,7 +57,7 @@ public class DataFrameInterface {
     private void showMenu() {
         System.out.println("""
             ==================================
-            📊   DataFrame Interface Menu
+            DataFrame Interface Menu
             ==================================
             1. Print top 6 rows
             2. Sort by column
@@ -71,7 +71,7 @@ public class DataFrameInterface {
     private int getValidChoice() {
         while (true) {
             try {
-                int choice = Integer.parseInt(scanner.nextLine());
+                int choice = Integer.parseInt(scanner.nextLine().trim());
                 if (choice >= 0 && choice <= 4) {
                     return choice;
                 } else {
@@ -85,15 +85,14 @@ public class DataFrameInterface {
 
     private void handleSort() {
         System.out.print("Enter the column to sort by: ");
-        String col = scanner.nextLine();
+        String col = scanner.nextLine().trim();
 
         if (!df.columnExists(col)) {
             System.out.println("Error: Column '" + col + "' does not exist.");
             return;
         }
 
-        System.out.print("Ascending? (true/false): ");
-        boolean asc = Boolean.parseBoolean(scanner.nextLine());
+        boolean asc = getValidBoolean("Ascending? (true/false): ");
         df.sortBy(col, asc);
         System.out.println("Data sorted by column: " + col + (asc ? " in ascending order." : " in descending order."));
         df.printBenchmarks();
@@ -101,7 +100,7 @@ public class DataFrameInterface {
 
     private void handleFilter() {
         System.out.print("Enter the column to filter by: ");
-        String col = scanner.nextLine();
+        String col = scanner.nextLine().trim();
 
         if (!df.columnExists(col)) {
             System.out.println("Error: Column '" + col + "' does not exist.");
@@ -109,15 +108,25 @@ public class DataFrameInterface {
         }
 
         System.out.print("Enter the minimum value for filtering: ");
-        int threshold = getValidIntInput();
+        double threshold = getValidDoubleInput();
 
-        df = df.filter(row -> Integer.parseInt(row.get(col)) > threshold);
+        // FIX: null / non-numeric cells are simply excluded instead of crashing the program
+        df = df.filter(row -> {
+            String v = row.get(col);
+            if (v == null) return false;
+            try {
+                return Double.parseDouble(v) > threshold;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        });
         System.out.println("Rows filtered where '" + col + "' > " + threshold);
+        df.printBenchmarks(); // FIX: benchmarks are now shown after a filter
     }
 
     private void handleGroupBy() {
         System.out.print("Enter the column to group by: ");
-        String groupCol = scanner.nextLine();
+        String groupCol = scanner.nextLine().trim();
 
         if (!df.columnExists(groupCol)) {
             System.out.println("Error: Column '" + groupCol + "' does not exist.");
@@ -125,7 +134,7 @@ public class DataFrameInterface {
         }
 
         System.out.print("Enter the column to aggregate: ");
-        String aggCol = scanner.nextLine();
+        String aggCol = scanner.nextLine().trim();
 
         if (!df.columnExists(aggCol)) {
             System.out.println("Error: Column '" + aggCol + "' does not exist.");
@@ -133,33 +142,46 @@ public class DataFrameInterface {
         }
 
         System.out.print("Enter the aggregation operation (sum/avg/min/max): ");
-        String op = scanner.nextLine();
+        String op = scanner.nextLine().trim();
 
-        Map<String, Double> result = df.groupByAggregate(groupCol, aggCol, op);
-        if (result.isEmpty()) {
-            System.out.println("No data to display for the selected aggregation.");
-        } else {
-            System.out.println("\nGrouped Data:");
-            result.forEach((k, v) -> System.out.printf("%s => %.2f\n", k, v));
+        try {
+            Map<String, Double> result = df.groupByAggregate(groupCol, aggCol, op);
+            if (result.isEmpty()) {
+                System.out.println("No data to display for the selected aggregation.");
+            } else {
+                System.out.println("\nGrouped Data:");
+                result.forEach((k, v) -> System.out.printf("%s => %.2f\n", k, v));
+            }
+            df.printBenchmarks();
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
         }
-
-        df.printBenchmarks();
     }
 
-    private int getValidIntInput() {
+    private double getValidDoubleInput() {
         while (true) {
             try {
-                return Integer.parseInt(scanner.nextLine());
+                return Double.parseDouble(scanner.nextLine().trim());
             } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a valid integer.");
+                System.out.println("Invalid input. Please enter a valid number.");
             }
+        }
+    }
+
+    private boolean getValidBoolean(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String s = scanner.nextLine().trim().toLowerCase();
+            if (s.equals("true") || s.equals("t") || s.equals("y")) return true;
+            if (s.equals("false") || s.equals("f") || s.equals("n")) return false;
+            System.out.println("Please enter true or false.");
         }
     }
 
     private void autoExport() {
         try {
-            df.exportToCSV("src/processed.csv");
-            System.out.println("🔄 Auto-exported to: src/processed.csv");
+            df.exportToCSV("processed.csv"); // FIX: no dependency on a src/ folder existing
+            System.out.println("Auto-exported to: processed.csv");
         } catch (IOException e) {
             System.out.println("Auto-export failed: " + e.getMessage());
         }
